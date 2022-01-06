@@ -1,13 +1,10 @@
 <?php
 
-function getConnexion(){
+  $server = "localhost";
+  $username = "root";
+  $password = "root";
+  $db = "task";
+  $conn = mysqli_connect($server, $username, $password, $db);
 
-    try{
-        return new PDO("mysql:host=localhost;dbname=task;charset=utf8","root","root");
-    }
-    catch(Exception $e){
-        die("Erreur BDD");
-    }
-}
 
 ?>
