@@ -1,119 +1,68 @@
 <?php
-  include("dbconnect.php");
-  $request_method = $_SERVER["REQUEST_METHOD"];
+	include("dbconnect.php");
+	$request_method = $_SERVER["REQUEST_METHOD"];
 
-  function getTasks()
-  {
-    global $conn;
-    $query = "SELECT * FROM todo";
-    $response = array();
-    $result = mysqli_query($conn, $query);
-    while($row = mysqli_fetch_assoc($result))
-    {
-      $response[] = $row;
-    }
-    header('Content-Type: application/json');
-    echo json_encode($response, JSON_PRETTY_PRINT);
+function getTasks(){
+    $pdo = getConnexion();
+    $req = "SELECT * FROM todo ORDER BY id asc";
+    $stmt = $pdo->prepare($req);
+    $stmt->execute();
+    $formations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->closeCursor();
+    sendJSON($formations);
+}
+
+  function getTask($id){
+    $pdo = getConnexion();
+    $req = "SELECT * FROM todo where id=".$id." LIMIT 1";
+    $stmts = $pdo->prepare($req);
+    $stmts->bindValue(":id",$id,PDO::PARAM_INT);
+    $stmts->execute();
+    $formation = $stmts->fetchAll(PDO::FETCH_ASSOC);
+    $stmts->closeCursor();
+    sendJSON($formation);
+}
+
+  function deleteTask($id){
+    $pdo = getConnexion();
+    $req = "DELETE FROM `todo` where id=".$id." LIMIT 1";
+    $supp = $pdo->prepare($req);
+    $supp->bindValue(":id",$id,PDO::PARAM_INT);
+    $supp->execute();
+    $formation = $supp->fetchAll(PDO::FETCH_ASSOC);
+    $supp->closeCursor();
   }
 
-
-  function getTask($id=0)
-  {
-    global $conn;
-    $query = "SELECT * FROM todo";
-    if($id != 0)
-    {
-      $query .= " WHERE id=".$id." LIMIT 1";
+function AddTask(){
+    $pdo = getConnexion();
+    $insertion = $pdo->prepare("INSERT INTO todo (nom, date) VALUES (:nom ,Now())");
+    $insertion->bindParam(':nom', $_POST['nom']);
+    if( $insertion->execute() ){
+        echo "Le produit a bien été ajouté";
+    }else{
+        echo "Une erreur d'ajout s'est produite";
     }
-    $response = array();
-    $result = mysqli_query($conn, $query);
-    while($row = mysqli_fetch_assoc($result))
-    {
-      $response[] = $row;
-    }
-    header('Content-Type: application/json');
-    echo json_encode($response, JSON_PRETTY_PRINT);
   }
 
-   function AddTask()
-  {
-    date_default_timezone_set('Europe/Paris');
-    $time = date('Y-m-d', time());
-    global $conn;
-    $nom = $_POST["nom"];
-    $date = date('Y-m-d H:i:s');
-    $query="INSERT INTO todo(nom,  date) VALUES ('".$nom."',Now())";
-    if(mysqli_query($conn, $query))
-    {
-      $response=array(
-        'status' => 1,
-        'status_message' =>'Produit ajoute avec succes.'
-      );
-    }
-    else
-    {
-      $response=array(
-        'status' => 0,
-        'status_message' =>'ERREUR!.'. mysqli_error($conn)
-      );
-    }
-    header('Content-Type: application/json');
-    echo json_encode($response);
+  function updateTask($id){
+    $pdo = getConnexion();
+      $_PUT = array();
+      //parse_str(file_get_contents("php://input"), $_PUT);
+      $_PUT = json_decode(file_get_contents("php://input"), true);
+      $nom = $_PUT["nom"];
+      $update = $pdo->prepare("UPDATE todo SET nom='".$nom."', date = Now() WHERE id=".$id);
+      //var_dump($_PUT["nom"]);
+      if( $update->execute()){
+          echo "Le produit a bien été Modifié";
+      }else{
+          echo "Une erreur s'est produite";
+      }
   }
 
-    function updateTask($id)
-  {
-    date_default_timezone_set('Europe/Paris');
-    global $conn;
-    $_PUT = array(); //tableau qui va contenir les données reçues
-    parse_str(file_get_contents('php://input'), $_PUT);
-    $nom = $_PUT["nom"];
-    $date = date('Y-m-d H:i:s');
-    //construire la requête SQL
-    $query="UPDATE todo SET nom='".$nom."', date = Now() WHERE id=".$id;
-    
-    if(mysqli_query($conn, $query))
-    {
-      $response=array(
-        'status' => 1,
-        'status_message' =>'Tâche mis a jour avec succes.'
-      );
-    }
-    else
-    {
-      $response=array(
-        'status' => 0,
-        'status_message' =>'Echec de la mise a jour de la tâche. '. mysqli_error($conn)
-      );
-      
-    }
-    
-    header('Content-Type: application/json');
-    echo json_encode($response);
-  }
-
-  function deleteTask($id)
-  {
-    global $conn;
-    $query = "DELETE FROM todo WHERE id=".$id;
-    if(mysqli_query($conn, $query))
-    {
-      $response=array(
-        'status' => 1,
-        'status_message' =>'Produit supprime avec succes.'
-      );
-    }
-    else
-    {
-      $response=array(
-        'status' => 0,
-        'status_message' =>'La suppression du produit a echoue. '. mysqli_error($conn)
-      );
-    }
-    header('Content-Type: application/json');
-    echo json_encode($response);
-  }
-
+    function sendJSON($infos){
+    header("Content-Type: application/json");
+    echo json_encode($infos, JSON_PRETTY_PRINT);
+}
 
   switch($request_method)
   {
@@ -128,25 +77,40 @@
         getTasks();
       }
       break;
-    default:
-      header("HTTP/1.0 405 Method Not Allowed");
-      break;
-
+    
     case 'POST':
 
       AddTask();
       break;
 
     case 'PUT':
+      if( !empty($_GET['id']) )
+      {
+        $id = intval($_GET["id"]);
+        updateTask($id);
+      }
+      else
+      {
+        echo "Vous n'avez pas renseigné l'id";
+      }
+      break;
 
-      $id = intval($_GET["id"]);
-      updateTask($id);
-    break;
+    case 'DELETE':
+      if(!empty($_GET['id']))
+      {
+        $id = intval($_GET["id"]);
+        deleteTask($id);
+	echo"La tache a bien été supprimé"; 
+      }
+      else
+      {
+        echo "Vous n'avez pas renseigné l'id";
+      }
+      break;
 
-    case 'delete':
-
-      $id = intval($_GET["id"]);
-      deleteTask($id);
-    break;
+    default:
+      echo "Choisie un verbe http";
+      break;
   }
 ?>
+
