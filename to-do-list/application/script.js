@@ -1,153 +1,132 @@
-const tdInput = document.getElementById("value");
-const tdButton = document.getElementById("btnAdd");
-const tdList = document.getElementById("list");
-const tdRemove = document.getElementById("btnRmv");
+$(document).ready(function () {
 
-tdButton.addEventListener("click", addTd);
-tdRemove.addEventListener("click",removeAll);
+ var table =$('#table_id').DataTable(
+{
+    ajax: {
+      url: "https://infra.ofii.fr/services/alternance/todo-list/api/task.php",
+      dataSrc: "",  
+    },   
+    "columns": [
+      { "data": "id", className: "my_class" },
+      { "data": "nom", className: "taskNom"  },
+      { "data": "date" },
+      { "data": null,"defaultContent":"<button id='btnmodify' type='button' class='btn btn-secondary' name='btnmodify'>Modifier</button><button id='btndelete' class='btn btn-danger'  type='button' name='btndeleete'>Supprimer</button><button id='btnok' type='button' class='hidebtn btn btn-success '  name='btnok'>Confirm</button><button id='btncancel' type='button' class='hidebtn btn btn-info ' name='btncancel'>Cancel</button></td>" },
+    ]
+  } 
 
+);
 
-function addTd(event){
-	event.preventDefault();
+ var taskInput=$('#nameInput');
+ var message=$('#message');
+ var btnmodify=$('#btnmodify');
 
-	if (!tdInput.value || tdInput.value.trim() === '') {
+ $("form #btnAdd").click(function (event){
+  
+ var formData = {
+	nom: $("#nameInput").val(),
+    };
 
-        $("#value").addClass("errorInput");
-
-	}else{
-
-		$("#value").removeClass("errorInput");
-
-		const newli = document.createElement("li");
-		newli.setAttribute('id','idLi');
-		newli.classList.add("todo-item");
-		tdList.appendChild(newli);
-		
-		const newlabel = document.createElement("label");
-		newlabel.setAttribute('id','idabel');
-		newlabel.classList.add("todo-label");
-		newli.appendChild(newlabel);
-		var oldtext = newlabel.innerText = tdInput.value;
-		tdInput.value = "";
-
-		/*const divmode = document.createElement("div");
-		divmode = setAttribute('id','idDivmode');
-		divmode = classList.add("div-btn-mode");
-		divmode.appendChild(editbtn);
-		divmode.appendChild(delbtn);*/
-
-		
-		const delbtn = document.createElement("button");
-		delbtn.innerHTML = "Delete"; 
-		delbtn.classList.add("todo-delbtn");
-		delbtn.setAttribute("type", "button");
-		delbtn.setAttribute('id', 'iddelbtn');
-		delbtn.addEventListener("click", delTD);
-
-		const editbtn = document.createElement("button");
-		editbtn.innerHTML = "Modify"; 
-		editbtn.classList.add("todo-editbtn");
-		editbtn.setAttribute("type", "button");
-		editbtn.setAttribute('id', 'ideditbtn');
-
-		const okbtn = document.createElement("button");
-	    okbtn.innerHTML = "Correct";
-	    okbtn.classList.add("todo-okbtn");
-	    okbtn.classList.add("hidebtn");
-	    okbtn.setAttribute('id', 'idokbtn');
-	    
-	    const cancelbtn = document.createElement("button");
-	    cancelbtn.innerHTML = "Cancel";
-	    cancelbtn.classList.add("todo-cancelbtn");
-	    cancelbtn.classList.add("hidebtn");
-	    cancelbtn.setAttribute('id', 'idcancelbtn');
-	    
-	    const newtxt = document.createElement("input");
-	    newtxt.setAttribute("type", "text");
-	    newtxt.setAttribute('id', 'idtextchange');
-	    newtxt.classList.add("txt-new");
-	    newtxt.value = newlabel.innerText;
-
-	    newli.appendChild(okbtn);
-	    newli.appendChild(cancelbtn);
-	    newli.appendChild(editbtn);
-		newli.appendChild(delbtn);
-
-
-		$("ul").on("dblclick", "label", function() {
-	  		$(this).removeClass("completed")
-		});
-
-		$("ul").on("click", "label", function() {
-	  		$(this).addClass("completed")
-		});
-
-		$("li").on("click", ".todo-editbtn", function() {	
-		  	$(this).hide()
-		  	$(this).closest("li").find(".todo-delbtn").hide()
-		  	$(this).closest("li").find(".todo-cancelbtn").removeClass("hidebtn")
-		  	$(this).closest("li").find(".todo-okbtn").removeClass("hidebtn")
-		  	$(this).parent().find("label").replaceWith(newtxt)
-		});
-
-		/*$("li").on("click", ".todo-editbtn", function() {	
-			$(this).parent().replaceWith(newtxt);
-			newtxt.appendChild(okbtn);
-			newtxt.appendChild(cancelbtn);
-		});*/
-
-		$("li").on("click", ".todo-cancelbtn", function(){
-			console.log($(this))
-			$(this).addClass("hidebtn")
-			$(this).closest("li").find(".todo-okbtn").addClass("hidebtn")
-			$(this).closest("li").find(".todo-delbtn").show()
-			$(this).closest("li").find(".todo-editbtn").show()
-			$(this).parent().find("input").replaceWith(newlabel)
-		});
-
-		$("li").on("click", ".todo-okbtn", function(){
-
-			if (!idtextchange.value || idtextchange.value.trim() === '') {
-
-       			 $("#idtextchange").addClass("errorInput");
-       			 alert("La zone doit saisie doit contenir au moins un caractère")
-
-				}else{
-
-
-				$(this).addClass("hidebtn")
-				var text = newlabel.value = newtxt.value
-				$(this).closest("li").find(".todo-cancelbtn").addClass("hidebtn")
-				$(this).closest("li").find(".todo-delbtn").show()
-				$(this).closest("li").find(".todo-editbtn").show()
-				newlabel.innerText = text
-				$(this).parent().find("input").replaceWith(newlabel)
-			}});
-
-	}
+  if(taskInput.val() || taskInput.val().trim() !== ''){
+    $.ajax({
+      type: "POST",
+      url: "https://infra.ofii.fr/services/alternance/todo-list/api/task.php",
+      data: formData,
+      dataType: "json",
+      encode: true,
+    });
+      table.ajax.reload();
+      message.html("Tâche ajoutée");
+      setTimeout(function(){ message.empty();}, 2000);
+      taskInput.empty()
 }
+else{
+   	 message.html("Tâche vide");
+   	 setTimeout(function(){ message.empty();}, 2000);
+    }
+   });
 
-function delTD(event2){
-	var obj = event2.target;
-	if (obj.classList[0] == "todo-delbtn"){
-		const del = obj.parentElement;
-		del.remove();
-	}
-}
+$('.dataTable').on('click', 'tbody td #btnmodify', function() {
+var txt = $(this).parent().siblings("td").eq(1).text().replace(/'/g,"&apos;");  
+$(this).addClass("hidebtn")
+$(this).parent().find("#btndelete").addClass("hidebtn")
+$(this).parent().find("#btnok").removeClass("hidebtn");
+$(this).parent().find("#btncancel").removeClass("hidebtn");
+//$(this).parent().siblings("td").eq(1).replaceWith("<input class='changeInput' id='changeInput' value="$(this).parent().siblings("td").eq(1).text()">")
+$(this).parent().siblings("td").eq(1).replaceWith("<input class='form-control' type='text'  id='inputChange' value='"+ txt + "' / >")
+});
 
-function removeAll(){
 
-	var inputs = document.querySelectorAll('#list input');
-	for(var i=0; input=inputs[i]; i++) {
-    input.parentNode.removeChild(input);
-	}
+$('.dataTable').on('click', 'tbody td #btncancel', function() {
+var oldtxt = $(this).parent().siblings("td").eq(1).val()
+var txt = $(this).parent().siblings("input").val()
+console.log(oldtxt)
+$(this).addClass("hidebtn")
+$(this).parent().find("#btnok").addClass("hidebtn");
+$(this).parent().find("#btnmodify").removeClass("hidebtn");
+$(this).parent().find("#btndelete").removeClass("hidebtn");
+$(this).parent().siblings("input").replaceWith("<td id='change'>")
+$(this).parent().siblings("td").eq(1).html(txt)
+$(this).parent().siblings("td").eq(1).removeAttr('id')
+});
 
-	var lis = document.querySelectorAll('#list li');
-	for(var i=0; li=lis[i]; i++) {
-    li.parentNode.removeChild(li);
-	}
+$('.dataTable').on('click', 'tbody td #btndelete', function() {
+var id = $(this).parent().siblings("td").eq(0).text() //Récuperation de l'id
+console.log(id)
+if (confirm('Voulez vous vraiment supprimez la tâche n°'+id )) {
+   // Save it!
+   $.ajax({
+    type: "DELETE",
+    url: "https://infra.ofii.fr/services/alternance/todo-list/api/task.php/"+id,
+   });
+   console.log('La tache a été supprimé');
+    message.html("Tâche supprimée");
+    setTimeout(function(){ message.empty();}, 2000);
 
-}
+   $(this).parent().parent().remove()
+   }
+   else
+   {
+   // Do nothing!
+   console.log('La suppression a été abandonnée');
+   }
+});
+
+$('.dataTable').on('click', 'tbody td #btnok', function(){
+  var id = $(this).parent().siblings("td").eq(0).text() //Récuperation de l'id
+  var value = $(this).parent().siblings("input").val()
+  var formData = {
+        nom: $(this).parent().siblings("input").val(),
+    };
+  console.log(formData)
+  if (confirm('Voulez vous vraiment modifié la tâche n°'+id )) {
+      $.ajax({
+         type: "PUT",
+         url: "https://infra.ofii.fr/services/alternance/todo-list/api/task.php/"+id,
+         data: JSON.stringify(formData).replace(/'/g,"&apos;"),
+	 dataType: "json",
+             });
+         console.log('La tache a été modifié');
+         message.html("Tâche modifié");
+         setTimeout(function(){ message.empty();}, 2000);
+	 var newtxt = $(this).parent().siblings("input").val()
+	 console.log("Le nouveau texte est :"+ newtxt)
+	 $(this).parent().siblings("input").replaceWith("<td>"+ newtxt +"</td> ")
+	 $(this).addClass("hidebtn");
+	 $(this).parent().find("#btncancel").addClass("hidebtn");
+	 $(this).parent().find("#btnmodify").removeClass("hidebtn");
+	 $(this).parent().find("#btndelete").removeClass("hidebtn");
+
+	  
+        } 
+          else
+         {
+          // Do nothing!
+          console.log('La suppression a été abandonnée');
+         }
+ });
+
+
+});
 
 
 
